@@ -171,9 +171,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 全局底部 -->
-        <GlobalFooter />
     </div>
 </template>
 

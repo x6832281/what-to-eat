@@ -107,9 +107,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 底部 -->
-        <GlobalFooter />
     </div>
 </template>
 

@@ -28,6 +28,261 @@ const createAiClient = () => {
     })
 }
 
+// 菜谱缓存机制
+const recipeCache = new Map<string, { recipe: Recipe; timestamp: number }>()
+const CACHE_TTL = 1000 * 60 * 60 // 1小时缓存
+
+/**
+ * 根据菜名流式生成菜谱
+ */
+export const generateRecipeByDishNameStreaming = async (
+    dishName: string,
+    cuisine: CuisineType,
+    onDelta: (delta: string) => void,
+    customPrompt?: string
+): Promise<Recipe> => {
+    // 检查缓存
+    const cacheKey = `dish:${dishName}:${cuisine.id}:${customPrompt || ''}`
+    const cached = recipeCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        console.log('从缓存获取菜谱:', dishName)
+        // 模拟流式效果（可选，这里直接返回以提高速度）
+        return cached.recipe
+    }
+
+    try {
+        const apiConfig = getTextGenerationConfig()
+
+        // 构建提示词
+        let prompt = `${cuisine.prompt}\n菜名：${dishName}\n返回JSON:{"name":"","ingredients":[],"steps":[{"step":1,"description":""}],"cookingTime":30,"difficulty":"medium","tips":[]}`
+
+        if (customPrompt) {
+            prompt += `\n要求：${customPrompt}`
+        }
+
+        const response = await fetch(`${apiConfig.baseUrl}chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiConfig.apiKey}`
+            },
+            body: JSON.stringify({
+                model: apiConfig.model,
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个专业大厨。只返回JSON格式菜谱，不要任何解释。'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                temperature: apiConfig.temperature,
+                max_tokens: 2000,
+                stream: true
+            })
+        })
+
+        if (!response.ok) {
+            throw new Error(`API请求失败: ${response.status}`)
+        }
+
+        const reader = response.body?.getReader()
+        if (!reader) throw new Error('无法读取流数据')
+
+        const decoder = new TextDecoder()
+        let fullText = ''
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value)
+            const lines = chunk.split('\n')
+
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        const json = JSON.parse(line.slice(6))
+                        const delta = json.choices[0].delta.content || ''
+                        if (delta) {
+                            fullText += delta
+                            onDelta(delta)
+                        }
+                    } catch (e) {
+                        // 忽略解析失败的碎片
+                    }
+                }
+            }
+        }
+
+        let cleanText = fullText.trim()
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/)
+        if (jsonMatch) cleanText = jsonMatch[0]
+
+        const recipeData = JSON.parse(cleanText)
+
+        // 增强步骤解析逻辑
+        const rawSteps = recipeData.steps || []
+        const parsedSteps = rawSteps.map((s: any, index: number) => {
+            if (typeof s === 'string') {
+                return { step: index + 1, description: s }
+            }
+            return {
+                step: s.step || index + 1,
+                description: s.description || s.content || s.text || '暂无描述',
+                time: s.time,
+                temperature: s.temperature
+            }
+        })
+
+        const finalRecipe: Recipe = {
+            id: `recipe-${cuisine.id}-${Date.now()}`,
+            name: recipeData.name || dishName,
+            cuisine: cuisine.name,
+            ingredients: recipeData.ingredients || [],
+            steps: parsedSteps,
+            cookingTime: recipeData.cookingTime || 30,
+            difficulty: recipeData.difficulty || 'medium',
+            tips: recipeData.tips || []
+        }
+
+        // 存入缓存
+        recipeCache.set(cacheKey, { recipe: finalRecipe, timestamp: Date.now() })
+
+        return finalRecipe
+    } catch (error) {
+        console.error('根据菜名流式生成失败:', error)
+        throw error
+    }
+}
+
+/**
+ * 调用AI接口流式生成菜谱
+ */
+export const generateRecipeStreaming = async (
+    ingredients: string[],
+    cuisine: CuisineType,
+    onDelta: (delta: string) => void,
+    customPrompt?: string
+): Promise<Recipe> => {
+    // 检查缓存
+    const cacheKey = `ingredients:${ingredients.sort().join(',')}:${cuisine.id}:${customPrompt || ''}`
+    const cached = recipeCache.get(cacheKey)
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.recipe
+    }
+
+    try {
+        const apiConfig = getTextGenerationConfig()
+
+        // 构建提示词
+        let prompt = `${cuisine.prompt}\n食材：${ingredients.join('、')}\n返回JSON:{"name":"","ingredients":[],"steps":[{"step":1,"description":""}],"cookingTime":30,"difficulty":"medium","tips":[]}`
+
+        if (customPrompt) {
+            prompt += `\n要求：${customPrompt}`
+        }
+
+        const response = await fetch(`${apiConfig.baseUrl}chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${apiConfig.apiKey}`
+            },
+            body: JSON.stringify({
+                model: apiConfig.model,
+                messages: [
+                    {
+                        role: 'system',
+                        content: '你是一个专业大厨。只返回JSON格式菜谱，不要任何解释。'
+                    },
+                    {
+                        role: 'user',
+                        content: prompt
+                    }
+                ],
+                temperature: apiConfig.temperature,
+                max_tokens: 2000,
+                stream: true // 开启流式输出
+            })
+        })
+
+        if (!response.ok) {
+            throw new Error(`API请求失败: ${response.status}`)
+        }
+
+        const reader = response.body?.getReader()
+        if (!reader) throw new Error('无法读取流数据')
+
+        const decoder = new TextDecoder()
+        let fullText = ''
+
+        while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            const chunk = decoder.decode(value)
+            const lines = chunk.split('\n')
+
+            for (const line of lines) {
+                if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+                    try {
+                        const json = JSON.parse(line.slice(6))
+                        const delta = json.choices[0].delta.content || ''
+                        if (delta) {
+                            fullText += delta
+                            onDelta(delta) // 实时回调增量内容
+                        }
+                    } catch (e) {
+                        // 忽略解析失败的碎片
+                    }
+                }
+            }
+        }
+
+        // 最终解析完整的JSON
+        let cleanText = fullText.trim()
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/)
+        if (jsonMatch) cleanText = jsonMatch[0]
+
+        const recipeData = JSON.parse(cleanText)
+
+        // 增强步骤解析逻辑
+        const rawSteps = recipeData.steps || []
+        const parsedSteps = rawSteps.map((s: any, index: number) => {
+            if (typeof s === 'string') {
+                return { step: index + 1, description: s }
+            }
+            return {
+                step: s.step || index + 1,
+                description: s.description || s.content || s.text || '暂无描述',
+                time: s.time,
+                temperature: s.temperature
+            }
+        })
+
+        const finalRecipe: Recipe = {
+            id: `recipe-${cuisine.id}-${Date.now()}`,
+            name: recipeData.name || `${cuisine.name}推荐`,
+            cuisine: cuisine.name,
+            ingredients: recipeData.ingredients || [],
+            steps: parsedSteps,
+            cookingTime: recipeData.cookingTime || 30,
+            difficulty: recipeData.difficulty || 'medium',
+            tips: recipeData.tips || []
+        }
+
+        // 存入缓存
+        recipeCache.set(cacheKey, { recipe: finalRecipe, timestamp: Date.now() })
+
+        return finalRecipe
+    } catch (error) {
+        console.error('流式生成失败:', error)
+        throw error
+    }
+}
+
 /**
  * 调用AI接口生成菜谱
  * @param ingredients 食材列表
@@ -102,37 +357,48 @@ export const generateRecipe = async (ingredients: string[], cuisine: CuisineType
 
         // 解析AI响应
         const aiResponse = response.data.choices[0].message.content
+        console.log('AI原始响应:', aiResponse)
 
-        // 清理响应内容，提取JSON部分
+        // 增强版JSON提取：使用正则匹配第一个 { 和最后一个 } 之间的内容
         let cleanResponse = aiResponse.trim()
-        if (cleanResponse.startsWith('```json')) {
-            cleanResponse = cleanResponse.replace(/```json\s*/, '').replace(/```\s*$/, '')
-        } else if (cleanResponse.startsWith('```')) {
-            cleanResponse = cleanResponse.replace(/```\s*/, '').replace(/```\s*$/, '')
+        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+            cleanResponse = jsonMatch[0]
         }
 
-        const recipeData = JSON.parse(cleanResponse)
+        try {
+            const recipeData = JSON.parse(cleanResponse)
+            
+            // 构建完整的Recipe对象
+            const recipe: Recipe = {
+                id: `recipe-${cuisine.id}-${Date.now()}`,
+                name: recipeData.name || `${cuisine.name}推荐菜品`,
+                cuisine: cuisine.name,
+                ingredients: recipeData.ingredients || ingredients,
+                steps: recipeData.steps || [
+                    { step: 1, description: '准备所有食材', time: 5 },
+                    { step: 2, description: '按照传统做法烹饪', time: 20 }
+                ],
+                cookingTime: recipeData.cookingTime || 25,
+                difficulty: recipeData.difficulty || 'medium',
+                tips: recipeData.tips || ['注意火候控制', '调味要适中'],
+                nutritionAnalysis: undefined,
+                winePairing: undefined
+            }
 
-        // 构建完整的Recipe对象
-        const recipe: Recipe = {
-            id: `recipe-${cuisine.id}-${Date.now()}`,
-            name: recipeData.name || `${cuisine.name}推荐菜品`,
-            cuisine: cuisine.name,
-            ingredients: recipeData.ingredients || ingredients,
-            steps: recipeData.steps || [
-                { step: 1, description: '准备所有食材', time: 5 },
-                { step: 2, description: '按照传统做法烹饪', time: 20 }
-            ],
-            cookingTime: recipeData.cookingTime || 25,
-            difficulty: recipeData.difficulty || 'medium',
-            tips: recipeData.tips || ['注意火候控制', '调味要适中'],
-            nutritionAnalysis: undefined,
-            winePairing: undefined
+            return recipe
+        } catch (parseError) {
+            console.error('JSON解析失败:', parseError, '清理后的内容:', cleanResponse)
+            throw new Error(`${cuisine.name}表示这个菜谱的格式太难处理了`)
         }
-
-        return recipe
     } catch (error) {
-        console.error(`生成${cuisine.name}菜谱失败:`, error)
+        console.error(`生成${cuisine.name}菜谱详细错误:`, error)
+        
+        // 如果是 Axios 错误，记录更多信息
+        if (axios.isAxiosError(error)) {
+            console.error('API请求状态码:', error.response?.status)
+            console.error('API错误详情:', error.response?.data)
+        }
 
         // 检查是否是400错误或其他特定错误
         if (error && typeof error === 'object' && 'response' in error) {
@@ -475,43 +741,52 @@ export const generateMultipleRecipesStream = async (
     cuisines: CuisineType[],
     onRecipeGenerated: (recipe: Recipe, index: number, total: number) => void,
     onRecipeError?: (error: Error, index: number, cuisine: CuisineType, total: number) => void,
-    customPrompt?: string
+    onDelta?: (delta: string, index: number) => void,
+    customPrompt?: string,
+    dishName?: string // 新增：菜名参数
 ): Promise<void> => {
     const total = cuisines.length
     let completedCount = 0
 
-    // 为了更好的用户体验，我们不并行生成，而是依次生成
-    // 这样用户可以看到一个个菜谱依次完成的效果
     for (let index = 0; index < cuisines.length; index++) {
         const cuisine = cuisines[index]
         try {
-            // 添加一些随机延迟，让生成过程更自然
-            const delay = 1000 + Math.random() * 2000 // 1-3秒的随机延迟
-            await new Promise(resolve => setTimeout(resolve, delay))
-
-            const recipe = await generateRecipe(ingredients, cuisine, customPrompt)
+            let recipe: Recipe
+            if (dishName) {
+                // 如果提供了菜名，使用根据菜名生成的函数
+                recipe = await generateRecipeByDishNameStreaming(
+                    dishName,
+                    cuisine,
+                    (delta) => {
+                        if (onDelta) onDelta(delta, index)
+                    },
+                    customPrompt
+                )
+            } else {
+                // 否则使用根据食材生成的函数
+                recipe = await generateRecipeStreaming(
+                    ingredients,
+                    cuisine,
+                    (delta) => {
+                        if (onDelta) onDelta(delta, index)
+                    },
+                    customPrompt
+                )
+            }
             completedCount++
             onRecipeGenerated(recipe, index, total)
         } catch (error) {
             console.error(`生成${cuisine.name}菜谱失败:`, error)
-
-            // 调用错误回调，让前端可以显示友好的错误信息
             if (onRecipeError) {
                 const friendlyError = new Error(`${cuisine.name}不会这道菜，哈哈`)
                 onRecipeError(friendlyError, index, cuisine, total)
             }
-
-            // 即使某个菜系失败，也继续生成其他菜系
             continue
         }
     }
 
     if (completedCount === 0) {
         throw new Error('所有菜系生成都失败了，请稍后重试')
-    }
-
-    if (completedCount < total) {
-        console.warn(`${total - completedCount}个菜系生成失败，但已成功生成${completedCount}个菜谱`)
     }
 }
 

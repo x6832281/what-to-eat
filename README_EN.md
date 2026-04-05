@@ -9,7 +9,7 @@ An AI-powered intelligent recipe generation platform supporting Chinese Eight Gr
 [![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-YiFan_FengShen-yellow?style=for-the-badge)](https://eat.lz-t.top/)
 [![Vercel](https://img.shields.io/badge/🚀_Vercel-yffs.vercel.app-black?style=for-the-badge&logo=vercel)](https://yffs.vercel.app/)
 [![Netlify](https://img.shields.io/badge/🌐_Netlify-whattoeatai.netlify.app-00C7B7?style=for-the-badge&logo=netlify)](https://whattoeatai.netlify.app/)
-[![GitHub](https://img.shields.io/badge/GitHub-liu--ziting/what--to--eat-black?style=for-the-badge&logo=github)](https://github.com/liu-ziting/what-to-eat)
+[![GitHub](https://img.shields.io/badge/GitHub-what--to--eat-black?style=for-the-badge&logo=github)](https://github.com/what-to-eat)
 
 ## 🚀 Core Features
 
@@ -39,7 +39,7 @@ An AI-powered intelligent recipe generation platform supporting Chinese Eight Gr
 
 ```bash
 # Clone the project
-git clone https://github.com/liu-ziting/what-to-eat.git
+git clone https://github.com/what-to-eat.git
 cd what-to-eat
 
 # Install dependencies
@@ -70,11 +70,11 @@ npm run preview
 
 ### Deploy to Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/liu-ziting/what-to-eat&env=VITE_TEXT_GENERATION_BASE_URL,VITE_TEXT_GENERATION_API_KEY,VITE_TEXT_GENERATION_MODEL,VITE_IMAGE_GENERATION_BASE_URL,VITE_IMAGE_GENERATION_API_KEY,VITE_IMAGE_GENERATION_MODEL&envDescription=AI%20API%20Configuration&envLink=https://github.com/liu-ziting/what-to-eat%23environment-variables)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/what-to-eat&env=VITE_TEXT_GENERATION_BASE_URL,VITE_TEXT_GENERATION_API_KEY,VITE_TEXT_GENERATION_MODEL,VITE_IMAGE_GENERATION_BASE_URL,VITE_IMAGE_GENERATION_API_KEY,VITE_IMAGE_GENERATION_MODEL&envDescription=AI%20API%20Configuration)
 
 ### Deploy to Netlify
 
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/liu-ziting/what-to-eat)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/what-to-eat)
 
 > 📖 For detailed deployment guide, see: [DEPLOYMENT.md](./DEPLOYMENT.md)
 

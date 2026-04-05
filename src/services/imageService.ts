@@ -13,10 +13,17 @@ export const generateRecipeImage = async (recipe: Recipe): Promise<GeneratedImag
     // 构建图片生成的提示词
     const prompt = buildImagePrompt(recipe)
 
-    const sizeToUse = { width: 1152, height: 896 }
+    // 智谱 CogView 模型推荐尺寸
+    const sizeToUse = "1024x1024"
+
+    // 确保 URL 包含正确的 endpoint
+    const url = config.baseUrl.endsWith('/') 
+        ? `${config.baseUrl}images/generations` 
+        : `${config.baseUrl}/images/generations`
 
     try {
-        const response = await fetch(config.baseUrl, {
+        console.log('正在请求图片生成...', { url, model: config.model });
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -25,29 +32,30 @@ export const generateRecipeImage = async (recipe: Recipe): Promise<GeneratedImag
             body: JSON.stringify({
                 model: config.model,
                 prompt: prompt,
-                size: `${sizeToUse.width}x${sizeToUse.height}`,
-                n: 1,
-                style: 'vivid',
-                quality: 'hd'
+                size: sizeToUse
             })
         })
 
         if (!response.ok) {
-            throw new Error(`API请求失败: ${response.status}`)
+            const errorData = await response.json().catch(() => ({}));
+            console.error('图片 API 错误详情:', errorData);
+            throw new Error(`API请求失败: ${response.status} - ${JSON.stringify(errorData)}`)
         }
 
         const data = await response.json()
+        console.log('图片生成成功:', data);
 
-        if (data.data && data.data.length > 0) {
+        // 智谱 AI 返回格式处理
+        if (data.data && data.data[0] && data.data[0].url) {
             return {
                 url: data.data[0].url,
                 id: `${recipe.id}-${Date.now()}`
             }
         } else {
-            throw new Error('API返回数据格式错误')
+            throw new Error('API返回数据格式中未找到图片URL')
         }
     } catch (error) {
-        console.error('生成图片失败:', error)
+        console.error('生成图片详细失败:', error)
         throw error
     }
 }

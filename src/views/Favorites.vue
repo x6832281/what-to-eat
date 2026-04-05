@@ -190,9 +190,6 @@
 
         <!-- 单个删除确认弹窗 -->
         <ConfirmModal v-if="removingRecipeId" title="确认取消收藏" message="确定要取消收藏这道菜谱吗？" @confirm="removeFavorite" @cancel="removingRecipeId = null" />
-
-        <!-- 底部 -->
-        <GlobalFooter />
     </div>
 </template>
 
@@ -202,7 +199,6 @@ import type { FavoriteRecipe } from '@/types'
 import { FavoriteService } from '@/services/favoriteService'
 import RecipeCard from '@/components/RecipeCard.vue'
 import GlobalNavigation from '@/components/GlobalNavigation.vue'
-import GlobalFooter from '@/components/GlobalFooter.vue'
 
 import NotesModal from '@/components/NotesModal.vue'
 import ConfirmModal from '@/components/ConfirmModal.vue'
@@ -301,111 +297,50 @@ const editNotes = (favorite: FavoriteRecipe) => {
 // 保存备注
 const saveNotes = (notes: string) => {
     if (editingFavorite.value) {
-        const success = FavoriteService.updateFavoriteNotes(editingFavorite.value.recipe.id, notes)
-        if (success) {
-            refreshFavorites()
-            showToast('备注已更新', 'success')
-        } else {
-            showToast('更新备注失败', 'error')
-        }
+        FavoriteService.updateNotes(editingFavorite.value.recipe.id, notes)
+        refreshFavorites()
+        editingFavorite.value = null
     }
-    editingFavorite.value = null
 }
 
-// 移除收藏
+// 删除确认
 const removingRecipeId = ref<string | null>(null)
-
-const confirmRemoveFavorite = (recipeId: string) => {
-    removingRecipeId.value = recipeId
+const confirmRemoveFavorite = (id: string) => {
+    removingRecipeId.value = id
 }
 
+// 执行删除
 const removeFavorite = () => {
-    if (!removingRecipeId.value) return
-
-    const success = FavoriteService.removeFavorite(removingRecipeId.value)
-    if (success) {
+    if (removingRecipeId.value) {
+        FavoriteService.removeFavorite(removingRecipeId.value)
         refreshFavorites()
-        showToast('已取消收藏', 'info')
-    } else {
-        showToast('取消收藏失败', 'error')
+        removingRecipeId.value = null
     }
-    removingRecipeId.value = null
 }
 
-// 清空所有收藏
+// 清空所有
 const clearAllFavorites = () => {
-    const success = FavoriteService.clearAllFavorites()
-    if (success) {
-        refreshFavorites()
-        showToast('已清空所有收藏', 'info')
-    } else {
-        showToast('清空失败', 'error')
-    }
+    FavoriteService.clearFavorites()
+    refreshFavorites()
     showClearConfirm.value = false
 }
 
-// 清除筛选条件
+// 清除筛选
 const clearFilters = () => {
     searchQuery.value = ''
     selectedCuisine.value = ''
     sortBy.value = 'date-desc'
 }
 
-// 简单的提示功能
-const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info') => {
-    const toast = document.createElement('div')
-    toast.className = `fixed top-4 right-4 px-4 py-2 rounded-lg text-white text-sm font-medium z-50 transition-all duration-300 transform translate-x-full`
-
-    const styles = {
-        success: 'bg-green-500',
-        error: 'bg-red-500',
-        warning: 'bg-yellow-500',
-        info: 'bg-blue-500'
-    }
-
-    toast.className += ` ${styles[type]}`
-    toast.textContent = message
-
-    document.body.appendChild(toast)
-
-    setTimeout(() => {
-        toast.style.transform = 'translateX(0)'
-    }, 10)
-
-    setTimeout(() => {
-        toast.style.transform = 'translateX(full)'
-        setTimeout(() => {
-            document.body.removeChild(toast)
-        }, 300)
-    }, 2000)
-}
-
-// 初始化
 onMounted(() => {
     refreshFavorites()
 })
 </script>
 
 <style scoped>
-/* 动画效果 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.hover\:scale-\[1\.02\]:hover {
-    transform: scale(1.02);
-}
-
 /* 响应式调整 */
 @media (max-width: 640px) {
-    .grid-cols-1 {
+    .grid {
         gap: 1rem;
     }
 }

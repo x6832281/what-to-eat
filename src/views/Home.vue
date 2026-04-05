@@ -4,140 +4,242 @@
         <GlobalNavigation />
 
         <div class="max-w-7xl mx-auto">
-            <!-- 步骤1: 输入食材 -->
+            <!-- 步骤1: 输入食材/菜名 -->
             <div class="mb-6">
-                <div class="bg-pink-400 text-white px-4 py-2 rounded-t-lg border-2 border-[#0A0910] border-b-0 inline-block">
-                    <span class="font-bold">1. 输入食材</span>
+                <div class="flex gap-2 mb-[-2px] relative z-10">
+                    <button
+                        @click="inputType = 'ingredients'"
+                        :class="[
+                            'px-4 py-2 rounded-t-lg border-2 border-[#0A0910] font-bold transition-all duration-200',
+                            inputType === 'ingredients' ? 'bg-pink-400 text-white border-b-0' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        ]"
+                    >
+                        1. 输入食材
+                    </button>
+                    <button
+                        @click="inputType = 'dishName'"
+                        :class="[
+                            'px-4 py-2 rounded-t-lg border-2 border-[#0A0910] font-bold transition-all duration-200',
+                            inputType === 'dishName' ? 'bg-purple-400 text-white border-b-0' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        ]"
+                    >
+                        2. 输入菜名
+                    </button>
+                    <button
+                        @click="inputType = 'favorites'; favorites = FavoriteService.getFavorites()"
+                        :class="[
+                            'px-4 py-2 rounded-t-lg border-2 border-[#0A0910] font-bold transition-all duration-200',
+                            inputType === 'favorites' ? 'bg-red-400 text-white border-b-0' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                        ]"
+                    >
+                        3. 我的收藏
+                    </button>
                 </div>
-                <div class="bg-white border-2 border-[#0A0910] rounded-lg rounded-tl-none p-4 md:p-6 md:pb-10">
-                    <div class="text-center mb-6">
-                        <div class="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <span class="text-white text-2xl">🥬</span>
+                <div
+                    class="bg-white border-2 border-[#0A0910] rounded-lg rounded-tl-none p-4 md:p-6 md:pb-10"
+                    :class="{ 
+                        'border-t-pink-400': inputType === 'ingredients', 
+                        'border-t-purple-400': inputType === 'dishName',
+                        'border-t-red-400': inputType === 'favorites'
+                    }"
+                >
+                    <!-- 输入食材模式 -->
+                    <div v-if="inputType === 'ingredients'">
+                        <!-- ... 保持原有内容不变 ... -->
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <span class="text-white text-2xl">🥬</span>
+                            </div>
+                            <h2 class="text-2xl font-bold text-dark-800 mb-2">添加食材</h2>
+                            <p class="text-gray-600">输入你现有的食材，按回车添加</p>
+                            <p class="text-xs text-gray-500 mt-1">支持蔬菜、肉类、调料等 (最多10种)</p>
                         </div>
-                        <h2 class="text-2xl font-bold text-dark-800 mb-2">添加食材</h2>
-                        <p class="text-gray-600">输入你现有的食材，按回车添加</p>
-                        <p class="text-xs text-gray-500 mt-1">支持蔬菜、肉类、调料等 (最多10种)</p>
+
+                        <!-- 食材输入区域 -->
+                        <div class="space-y-4">
+                            <!-- 已添加的食材 -->
+                            <div v-if="ingredients.length > 0" class="flex flex-wrap gap-2">
+                                <div
+                                    v-for="ingredient in ingredients"
+                                    :key="ingredient"
+                                    class="inline-flex items-center gap-2 bg-yellow-400 text-dark-800 px-3 py-2 rounded-full text-sm font-medium border-2 border-[#0A0910]"
+                                >
+                                    {{ ingredient }}
+                                    <button @click="removeIngredient(ingredient)" class="hover:bg-yellow-500 rounded-full p-1 transition-colors">
+                                        <span class="text-xs">✕</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 输入框 -->
+                            <div class="flex gap-2">
+                                <input
+                                    v-model="currentIngredient"
+                                    @keyup.enter="addIngredient"
+                                    placeholder="输入食材名称，按回车添加..."
+                                    class="flex-1 p-3 md:p-4 border-2 border-[#0A0910] rounded-lg text-sm md:text-lg font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                                />
+                                <div class="relative group">
+                                    <button
+                                        @click="triggerImageUpload"
+                                        :disabled="isRecognizing"
+                                        class="relative h-full px-3 bg-white hover:bg-gray-50 disabled:bg-gray-100 rounded-lg border-2 border-[#0A0910] transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center min-w-[3rem]"
+                                    >
+                                        <!-- 正常状态 -->
+                                        <span v-if="!isRecognizing" class="text-2xl" style="margin-top: -8px">📷</span>
+
+                                        <!-- 加载状态 -->
+                                        <div v-else class="relative flex items-center justify-center">
+                                            <div class="absolute w-5 h-5 border-2 border-gray-300 rounded-full"></div>
+                                            <div class="absolute w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+                                        </div>
+                                    </button>
+
+                                    <!-- 提示文字 -->
+                                    <div
+                                        class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap"
+                                    >
+                                        <div class="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl">
+                                            拍照识别
+                                            <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
+                                                <div class="w-2 h-2 bg-gray-900 transform rotate-45"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input ref="imageInput" type="file" accept="image/*" @change="handleImageUpload" class="hidden" />
+                            </div>
+
+                            <!-- 快速选择食材 -->
+                            <div class="mt-4">
+                                <button
+                                    @click="toggleIngredientPicker"
+                                    class="flex items-center justify-between w-full p-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                                >
+                                    <span class="flex items-center gap-2">
+                                        <span class="text-base">🥬</span>
+                                        <span class="font-medium">快速选择食材</span>
+                                    </span>
+                                    <span class="transform transition-transform duration-200 text-gray-400" :class="{ 'rotate-180': showIngredientPicker }">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </span>
+                                </button>
+
+                                <div v-if="showIngredientPicker" class="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <!-- 食材展示区域 -->
+                                    <div class="p-3 max-h-80 overflow-y-auto">
+                                        <div class="space-y-4">
+                                            <div v-for="category in ingredientCategories" :key="category.id">
+                                                <!-- 分类标题 -->
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <span class="text-sm">{{ category.icon }}</span>
+                                                    <span class="text-sm font-bold text-gray-700">{{ category.name }}</span>
+                                                    <div class="flex-1 h-px bg-gray-200"></div>
+                                                </div>
+
+                                                <!-- 食材按钮 -->
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    <button
+                                                        v-for="item in category.items"
+                                                        :key="item"
+                                                        @click="quickAddIngredient(item)"
+                                                        :disabled="ingredients.includes(item) || ingredients.length >= 10"
+                                                        class="px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 hover:border-pink-400 hover:bg-pink-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:border-gray-200 transition-all duration-200 hover:shadow-sm"
+                                                        :class="{
+                                                            'bg-yellow-100 border-yellow-400 text-yellow-800 shadow-sm': ingredients.includes(item),
+                                                            'hover:scale-105': !ingredients.includes(item) && ingredients.length < 10
+                                                        }"
+                                                    >
+                                                        {{ item }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 底部状态栏 -->
+                                    <div class="px-3 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex justify-between items-center">
+                                        <span>点击食材快速添加到列表</span>
+                                        <span class="font-medium">已选择 {{ ingredients.length }}/10</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- 食材输入区域 -->
-                    <div class="space-y-4">
-                        <!-- 已添加的食材 -->
-                        <div v-if="ingredients.length > 0" class="flex flex-wrap gap-2">
-                            <div
-                                v-for="ingredient in ingredients"
-                                :key="ingredient"
-                                class="inline-flex items-center gap-2 bg-yellow-400 text-dark-800 px-3 py-2 rounded-full text-sm font-medium border-2 border-[#0A0910]"
-                            >
-                                {{ ingredient }}
-                                <button @click="removeIngredient(ingredient)" class="hover:bg-yellow-500 rounded-full p-1 transition-colors">
-                                    <span class="text-xs">✕</span>
-                                </button>
+                    <!-- 输入菜名模式 -->
+                    <div v-else-if="inputType === 'dishName'">
+                        <!-- ... 保持原有内容不变 ... -->
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-black rounded-lg flex items-center justify-center mx-auto mb-4">
+                                <span class="text-white text-2xl">🥘</span>
                             </div>
+                            <h2 class="text-2xl font-bold text-dark-800 mb-2">想吃什么菜？</h2>
+                            <p class="text-gray-600">输入你想吃的菜品名称</p>
+                            <p class="text-xs text-gray-500 mt-1">例如：红烧肉、宫保鸡丁、意大利面等</p>
                         </div>
 
-                        <!-- 输入框 -->
-                        <div class="flex gap-2">
+                        <div class="max-w-2xl mx-auto">
                             <input
-                                v-model="currentIngredient"
-                                @keyup.enter="addIngredient"
-                                placeholder="输入食材名称，按回车添加..."
-                                class="flex-1 p-3 md:p-4 border-2 border-[#0A0910] rounded-lg text-sm md:text-lg font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                                v-model="dishName"
+                                placeholder="输入菜品名称，例如：麻婆豆腐..."
+                                class="w-full p-4 border-2 border-[#0A0910] rounded-lg text-lg font-medium focus:outline-none focus:ring-2 focus:ring-purple-400 shadow-sm"
                             />
-                            <div class="relative group">
+                            <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
                                 <button
-                                    @click="triggerImageUpload"
-                                    :disabled="isRecognizing"
-                                    class="relative h-full px-3 bg-white hover:bg-gray-50 disabled:bg-gray-100 rounded-lg border-2 border-[#0A0910] transition-all duration-200 disabled:cursor-not-allowed flex items-center justify-center min-w-[3rem]"
+                                    v-for="name in ['红烧肉', '鱼香肉丝', '番茄炒蛋', '宫保鸡丁']"
+                                    :key="name"
+                                    @click="dishName = name"
+                                    class="px-3 py-2 text-sm font-bold bg-white border-2 border-[#0A0910] rounded-lg hover:bg-purple-50 transition-colors"
                                 >
-                                    <!-- 正常状态 -->
-                                    <span v-if="!isRecognizing" class="text-2xl" style="margin-top: -8px">📷</span>
-
-                                    <!-- 加载状态 -->
-                                    <div v-else class="relative flex items-center justify-center">
-                                        <div class="absolute w-5 h-5 border-2 border-gray-300 rounded-full"></div>
-                                        <div class="absolute w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
+                                    {{ name }}
                                 </button>
-
-                                <!-- 提示文字 -->
-                                <div
-                                    class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap"
-                                >
-                                    <div class="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl">
-                                        拍照识别
-                                        <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1">
-                                            <div class="w-2 h-2 bg-gray-900 transform rotate-45"></div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
-                            <input ref="imageInput" type="file" accept="image/*" @change="handleImageUpload" class="hidden" />
+                        </div>
+                    </div>
+
+                    <!-- 我的收藏模式 -->
+                    <div v-else-if="inputType === 'favorites'">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-red-500 rounded-lg flex items-center justify-center mx-auto mb-4 border-2 border-[#0A0910]">
+                                <span class="text-white text-2xl">❤️</span>
+                            </div>
+                            <h2 class="text-2xl font-bold text-dark-800 mb-2">我的收藏</h2>
+                            <p class="text-gray-600">你收藏的美味菜谱都在这里</p>
                         </div>
 
-                        <!-- 快速选择食材 -->
-                        <div class="mt-4">
-                            <button
-                                @click="toggleIngredientPicker"
-                                class="flex items-center justify-between w-full p-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-all duration-200"
+                        <div v-if="favorites.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div
+                                v-for="fav in favorites"
+                                :key="fav.id"
+                                class="bg-white border-2 border-[#0A0910] rounded-lg p-4 flex items-center justify-between hover:bg-red-50 transition-colors cursor-pointer group"
+                                @click="recipes = [fav.recipe]; resultsSection?.scrollIntoView({ behavior: 'smooth' })"
                             >
-                                <span class="flex items-center gap-2">
-                                    <span class="text-base">🥬</span>
-                                    <span class="font-medium">快速选择食材</span>
-                                </span>
-                                <span class="transform transition-transform duration-200 text-gray-400" :class="{ 'rotate-180': showIngredientPicker }">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </span>
-                            </button>
-
-                            <div v-if="showIngredientPicker" class="mt-2 border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                                <!-- 食材展示区域 -->
-                                <div class="p-3 max-h-80 overflow-y-auto">
-                                    <div class="space-y-4">
-                                        <div v-for="category in ingredientCategories" :key="category.id">
-                                            <!-- 分类标题 -->
-                                            <div class="flex items-center gap-2 mb-2">
-                                                <span class="text-sm">{{ category.icon }}</span>
-                                                <span class="text-sm font-bold text-gray-700">{{ category.name }}</span>
-                                                <div class="flex-1 h-px bg-gray-200"></div>
-                                            </div>
-
-                                            <!-- 食材按钮 -->
-                                            <div class="flex flex-wrap gap-1.5">
-                                                <button
-                                                    v-for="item in category.items"
-                                                    :key="item"
-                                                    @click="quickAddIngredient(item)"
-                                                    :disabled="ingredients.includes(item) || ingredients.length >= 10"
-                                                    class="px-3 py-1.5 text-xs font-medium rounded-full border border-gray-300 hover:border-pink-400 hover:bg-pink-50 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed disabled:border-gray-200 transition-all duration-200 hover:shadow-sm"
-                                                    :class="{
-                                                        'bg-yellow-100 border-yellow-400 text-yellow-800 shadow-sm': ingredients.includes(item),
-                                                        'hover:scale-105': !ingredients.includes(item) && ingredients.length < 10
-                                                    }"
-                                                >
-                                                    {{ item }}
-                                                </button>
-                                            </div>
-                                        </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center border-2 border-black font-bold">
+                                        {{ fav.recipe.cuisine.substring(0, 1) }}
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-gray-800">{{ fav.recipe.name }}</h3>
+                                        <p class="text-xs text-gray-500">收藏于 {{ new Date(fav.favoriteDate).toLocaleDateString() }}</p>
                                     </div>
                                 </div>
-
-                                <!-- 底部状态栏 -->
-                                <div class="px-3 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-500 flex justify-between items-center">
-                                    <span>点击食材快速添加到列表</span>
-                                    <span class="font-medium">已选择 {{ ingredients.length }}/10</span>
-                                </div>
+                                <div class="text-red-400 group-hover:scale-125 transition-transform">❤️</div>
                             </div>
+                        </div>
+                        <div v-else class="text-center py-10">
+                            <p class="text-gray-400">暂无收藏菜谱，快去生成并收藏吧！</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- 步骤2和3: 左右布局 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <!-- 步骤2: 选择菜系 -->
-                <div>
+            <!-- 步骤2和3: 左右布局 (仅在非收藏夹模式下显示) -->
+            <div v-if="inputType !== 'favorites'" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- 步骤2: 选择菜系 (仅在输入食材模式下显示) -->
+                <div v-if="inputType === 'ingredients'">
                     <div class="bg-green-400 text-white px-4 py-2 rounded-t-lg border-2 border-[#0A0910] border-b-0 inline-block">
                         <span class="font-bold">2. 选择菜系</span>
                     </div>
@@ -298,6 +400,41 @@
                     </div>
                 </div>
 
+                <!-- 步骤2: 自定义配置 (输入菜名模式下显示) -->
+                <div v-else>
+                    <div class="bg-purple-400 text-white px-4 py-2 rounded-t-lg border-2 border-[#0A0910] border-b-0 inline-block">
+                        <span class="font-bold">2. 自定义要求</span>
+                    </div>
+                    <div class="bg-white border-2 border-[#0A0910] rounded-lg rounded-tl-none p-4 md:p-6 h-full">
+                        <div class="text-center mb-4">
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
+                                <span class="text-purple-600 text-xl">💡</span>
+                            </div>
+                            <h3 class="font-bold text-gray-800">特殊偏好</h3>
+                            <p class="text-xs text-gray-500">如果有口味或营养方面的特殊要求，请在下方填写</p>
+                        </div>
+                        
+                        <textarea
+                            v-model="customPrompt"
+                            @input="limitCustomPrompt"
+                            placeholder="例如：不放辣、少放盐、适合小孩吃..."
+                            class="w-full p-4 border-2 border-purple-200 rounded-lg text-sm resize-none focus:outline-none focus:border-purple-500 h-32 shadow-inner bg-purple-50/30"
+                            maxlength="200"
+                        ></textarea>
+                        
+                        <div class="mt-4 grid grid-cols-2 gap-2">
+                            <button
+                                v-for="tag in ['少盐少油', '不放辣', '软烂易嚼', '口感酥脆']"
+                                :key="tag"
+                                @click="customPrompt = tag"
+                                class="px-2 py-2 text-xs font-medium border-2 border-purple-100 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-colors"
+                            >
+                                {{ tag }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 步骤3: 交给大师 -->
                 <div class="max-sm:mt-10">
                     <div class="bg-orange-400 text-white px-4 py-2 rounded-t-lg border-2 border-[#0A0910] border-b-0 inline-block">
@@ -318,15 +455,26 @@
                                     <span>当前配置</span>
                                 </h3>
 
-                                <!-- 食材列表 -->
+                                <!-- 食材列表/菜名 -->
                                 <div class="mb-2">
-                                    <span class="text-xs font-medium text-gray-600">食材 ({{ ingredients.length }})：</span>
-                                    <div v-if="ingredients.length > 0" class="flex flex-wrap gap-1 mt-1">
-                                        <span v-for="ingredient in ingredients" :key="ingredient" class="inline-block bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs">
-                                            {{ ingredient }}
-                                        </span>
-                                    </div>
-                                    <span v-else class="text-xs text-gray-400">未添加食材</span>
+                                    <template v-if="inputType === 'ingredients'">
+                                        <span class="text-xs font-medium text-gray-600">食材 ({{ ingredients.length }})：</span>
+                                        <div v-if="ingredients.length > 0" class="flex flex-wrap gap-1 mt-1">
+                                            <span v-for="ingredient in ingredients" :key="ingredient" class="inline-block bg-yellow-200 text-yellow-800 px-2 py-1 rounded text-xs">
+                                                {{ ingredient }}
+                                            </span>
+                                        </div>
+                                        <span v-else class="text-xs text-gray-400">未添加食材</span>
+                                    </template>
+                                    <template v-else>
+                                        <span class="text-xs font-medium text-gray-600">菜品名称：</span>
+                                        <div v-if="dishName.trim()" class="mt-1">
+                                            <span class="inline-block bg-purple-200 text-purple-800 px-2 py-1 rounded text-xs font-bold">
+                                                {{ dishName }}
+                                            </span>
+                                        </div>
+                                        <span v-else class="text-xs text-gray-400">未输入菜名</span>
+                                    </template>
                                 </div>
 
                                 <!-- 菜系和大师选择 -->
@@ -358,7 +506,7 @@
                             <!-- 生成按钮 -->
                             <button
                                 @click="generateRecipes"
-                                :disabled="ingredients.length === 0 || isLoading"
+                                :disabled="(inputType === 'ingredients' ? ingredients.length === 0 : !dishName.trim()) || isLoading"
                                 class="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:from-gray-400 disabled:to-gray-400 text-white px-6 py-3 rounded-lg font-bold text-base md:text-lg border-2 border-[#0A0910] transition-all duration-300 transform disabled:scale-100 disabled:cursor-not-allowed shadow-lg mb-3"
                             >
                                 <span class="flex items-center gap-2 justify-center">
@@ -369,7 +517,7 @@
                                     </template>
                                     <template v-else>
                                         <span class="text-xl">✨</span>
-                                        <span>{{ customPrompt.trim() ? '按要求生成' : '交给大师' }}</span>
+                                        <span>{{ inputType === 'dishName' ? '开始创作菜谱' : (customPrompt.trim() ? '按要求生成' : '交给大师') }}</span>
                                     </template>
                                 </span>
                             </button>
@@ -532,8 +680,20 @@
                                             <h3 class="text-lg font-bold text-dark-800 mb-2">{{ cuisineInfo.name }}正在创作中...</h3>
                                             <p class="text-gray-600 text-sm mb-3">{{ cuisineInfo.loadingText || loadingText }}</p>
 
+                                            <!-- 实时生成预览 -->
+                                            <div v-if="cuisineInfo.streamingContent" class="mt-4 p-3 bg-white/50 rounded-lg border border-orange-200 text-left overflow-hidden">
+                                                <div class="text-xs text-gray-500 mb-1 border-b border-orange-100 pb-1 flex justify-between items-center">
+                                                    <span>📝 实时创作预览</span>
+                                                    <span class="animate-pulse">● 录入中</span>
+                                                </div>
+                                                <div class="text-sm text-gray-700 font-mono leading-relaxed h-24 overflow-y-auto custom-scrollbar italic">
+                                                    {{ cuisineInfo.streamingContent }}
+                                                    <span class="inline-block w-1 h-4 bg-orange-500 animate-pulse align-middle ml-0.5"></span>
+                                                </div>
+                                            </div>
+
                                             <!-- 进度条 -->
-                                            <div class="max-w-xs mx-auto">
+                                            <div class="max-w-xs mx-auto mt-4">
                                                 <div class="bg-gray-200 rounded-full h-3 overflow-hidden">
                                                     <div
                                                         class="bg-gradient-to-r from-orange-400 to-yellow-500 h-3 rounded-full transition-all duration-1000 relative"
@@ -598,7 +758,6 @@
         </div>
 
         <!-- 底部 -->
-        <GlobalFooter />
     </div>
 </template>
 
@@ -650,21 +809,33 @@
 </style>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
+// 性能优化：使用 shallowRef 减少深层响应式开销
+import { ref, shallowRef, onUnmounted } from 'vue'
 import { cuisines } from '@/config/cuisines'
 import { ingredientCategories } from '@/config/ingredients'
 import RecipeCard from '@/components/RecipeCard.vue'
 import GlobalNavigation from '@/components/GlobalNavigation.vue'
 import GlobalFooter from '@/components/GlobalFooter.vue'
-import { generateCustomRecipe, generateMultipleRecipesStream, generateRecipe } from '@/services/aiService'
-import type { Recipe, CuisineType } from '@/types'
+import { generateCustomRecipe, generateMultipleRecipesStream, generateRecipe, generateRecipeByDishNameStreaming } from '@/services/aiService'
+import { FavoriteService } from '@/services/favoriteService'
+import type { Recipe, CuisineType, FavoriteRecipe } from '@/types'
 
 // 响应式数据
+const inputType = ref<'ingredients' | 'dishName' | 'favorites'>('ingredients')
+const dishName = ref('')
+const favorites = ref<FavoriteRecipe[]>([])
+
+// 页面加载时获取收藏
+import { onMounted } from 'vue'
+onMounted(() => {
+    favorites.value = FavoriteService.getFavorites()
+})
+
 const ingredients = ref<string[]>([])
 const currentIngredient = ref('')
 const selectedCuisines = ref<string[]>([])
 const customPrompt = ref('')
-const recipes = ref<Recipe[]>([])
+const recipes = shallowRef<Recipe[]>([]) // 优化：菜谱数据不需要深度响应
 const isLoading = ref(false)
 const loadingText = ref('大师正在挑选食材...')
 const resultsSection = ref<HTMLElement | null>(null)
@@ -682,6 +853,7 @@ interface CuisineSlot {
     progress: number
     error?: boolean
     errorMessage?: string
+    streamingContent?: string // 新增：流式文本
 }
 const cuisineSlots = ref<CuisineSlot[]>([])
 
@@ -997,7 +1169,13 @@ const selectCuisine = (cuisine: CuisineType) => {
 
 // 生成菜谱
 const generateRecipes = async () => {
-    if (ingredients.value.length === 0) {
+    // 根据输入类型检查必填项
+    if (inputType.value === 'ingredients' && ingredients.value.length === 0) {
+        alert('请先添加至少一种食材')
+        return
+    }
+    if (inputType.value === 'dishName' && !dishName.value.trim()) {
+        alert('请先输入菜品名称')
         return
     }
 
@@ -1006,7 +1184,7 @@ const generateRecipes = async () => {
     recipes.value = [] // 清空之前的菜谱
     cuisineSlots.value = [] // 清空菜系槽位
     errorMessage.value = ''
-    loadingText.value = '大师正在挑选食材...' // 重置加载文字
+    loadingText.value = inputType.value === 'dishName' ? `正在为您研究${dishName.value}...` : '大师正在挑选食材...' // 重置加载文字
 
     // 清除之前的加载定时器
     if (loadingInterval) {
@@ -1023,13 +1201,14 @@ const generateRecipes = async () => {
     }
 
     // 检查是否有自定义提示词
-    if (customPrompt.value.trim()) {
-        // 使用自定义提示词生成菜谱 - 立即创建单个槽位
+    if (customPrompt.value.trim() || inputType.value === 'dishName') {
+        // 在菜名模式下，或者有自定义提示词时，我们只显示一个主卡片
+        const slotName = inputType.value === 'dishName' ? dishName.value.trim() : '自定义大师'
         cuisineSlots.value = [
             {
                 id: 'custom',
-                name: '自定义大师',
-                loadingText: '正在根据您的要求创作...',
+                name: slotName,
+                loadingText: inputType.value === 'dishName' ? `正在为您研究${dishName.value}...` : '正在根据您的要求创作...',
                 progress: 0
             }
         ]
@@ -1053,7 +1232,7 @@ const generateRecipes = async () => {
     }
 
     try {
-        if (customPrompt.value.trim()) {
+        if (customPrompt.value.trim() || inputType.value === 'dishName') {
             // 开始进度动画
             const progressInterval = setInterval(() => {
                 if (cuisineSlots.value[0] && !cuisineSlots.value[0].recipe) {
@@ -1061,13 +1240,30 @@ const generateRecipes = async () => {
                 }
             }, 500)
 
-            const customRecipe = await generateCustomRecipe(ingredients.value, customPrompt.value.trim())
+            let customRecipe: Recipe
+            if (inputType.value === 'dishName') {
+                // 如果是菜名模式
+                customRecipe = await generateRecipeByDishNameStreaming(
+                    dishName.value.trim(),
+                    { id: 'custom', name: dishName.value.trim(), avatar: '🥘', prompt: '你是一位资深大厨' } as CuisineType,
+                    (delta) => {
+                        if (cuisineSlots.value[0]) {
+                            if (!cuisineSlots.value[0].streamingContent) cuisineSlots.value[0].streamingContent = ''
+                            cuisineSlots.value[0].streamingContent += delta
+                        }
+                    },
+                    customPrompt.value.trim() || undefined
+                )
+            } else {
+                customRecipe = await generateCustomRecipe(ingredients.value, customPrompt.value.trim())
+            }
 
             // 完成生成，更新槽位
             if (cuisineSlots.value[0]) {
                 cuisineSlots.value[0].recipe = customRecipe
                 cuisineSlots.value[0].progress = 100
                 cuisineSlots.value[0].loadingText = '创作完成！'
+                cuisineSlots.value[0].streamingContent = ''
             }
             recipes.value = [customRecipe]
             isLoading.value = false
@@ -1080,7 +1276,9 @@ const generateRecipes = async () => {
                     if (!slot.recipe) {
                         slot.progress = Math.min(slot.progress + Math.random() * 10, 85)
                         // 随机更新加载文字
-                        const texts = [`${slot.name}正在挑选食材...`, `${slot.name}正在调配秘制酱料...`, `${slot.name}正在掌控火候...`, `${slot.name}正在精心摆盘...`]
+                        const texts = inputType.value === 'dishName' 
+                            ? [`${slot.name}正在构思${dishName.value}...`, `${slot.name}正在推演步骤...`, `${slot.name}正在优化配比...`]
+                            : [`${slot.name}正在挑选食材...`, `${slot.name}正在调配秘制酱料...`, `${slot.name}正在掌控火候...`, `${slot.name}正在精心摆盘...`]
                         slot.loadingText = texts[Math.floor(Math.random() * texts.length)]
                     }
                 }, 800 + index * 200) // 每个槽位的更新频率略有不同
@@ -1108,10 +1306,11 @@ const generateRecipes = async () => {
                         targetSlot.recipe = recipe
                         targetSlot.progress = 100
                         targetSlot.loadingText = '创作完成！'
+                        targetSlot.streamingContent = '' // 完成后清除预览文字
                     }
 
                     // 每生成一个菜谱就立即添加到列表中
-                    recipes.value.push(recipe)
+                    recipes.value = [...recipes.value, recipe]
 
                     // 更新全局加载文字，显示进度
                     const completedCount = recipes.value.length + cuisineSlots.value.filter(slot => slot.error).length
@@ -1122,11 +1321,6 @@ const generateRecipes = async () => {
                         isLoading.value = false
                         // 清理所有进度定时器
                         progressIntervals.forEach(interval => clearInterval(interval))
-
-                        // 延迟一下再清理槽位，让用户看到完成状态
-                        setTimeout(() => {
-                            // 保持槽位显示，不清理，这样用户可以看到完整的生成过程
-                        }, 1000)
                     }
                 },
                 (error: Error, index: number, _cuisine: CuisineType, total: number) => {
@@ -1138,6 +1332,7 @@ const generateRecipes = async () => {
                         targetSlot.errorMessage = error.message
                         targetSlot.progress = 0
                         targetSlot.loadingText = '生成失败'
+                        targetSlot.streamingContent = ''
                     }
 
                     // 更新全局加载文字，显示进度
@@ -1151,7 +1346,18 @@ const generateRecipes = async () => {
                         progressIntervals.forEach(interval => clearInterval(interval))
                     }
                 },
-                customPrompt.value.trim() || undefined
+                (delta: string, index: number) => {
+                    // 收到流式数据时的回调
+                    const targetSlot = cuisineSlots.value.find(slot => selectedCuisineObjects[index] && slot.id === selectedCuisineObjects[index].id)
+                    if (targetSlot) {
+                        if (!targetSlot.streamingContent) targetSlot.streamingContent = ''
+                        targetSlot.streamingContent += delta
+                        // 更新进度条以显示活跃感
+                        targetSlot.progress = Math.min(targetSlot.progress + 0.5, 95)
+                    }
+                },
+                customPrompt.value.trim() || undefined,
+                inputType.value === 'dishName' ? dishName.value.trim() : undefined
             )
 
             // 清理进度定时器
@@ -1198,14 +1404,41 @@ const retryFailedCuisine = async (failedSlot: CuisineSlot) => {
         await new Promise(resolve => setTimeout(resolve, delay))
 
         // 重新生成菜谱
-        const recipe = customPrompt.value.trim()
-            ? await generateCustomRecipe(ingredients.value, customPrompt.value.trim())
-            : await generateRecipe(ingredients.value, cuisine, customPrompt.value.trim() || undefined)
+        let recipe: Recipe
+        if (customPrompt.value.trim()) {
+            if (inputType.value === 'dishName') {
+                recipe = await generateRecipeByDishNameStreaming(
+                    dishName.value.trim(),
+                    { id: 'custom', name: '自定义大师', avatar: '👨‍🍳', prompt: customPrompt.value.trim() } as CuisineType,
+                    (delta) => {
+                        if (!failedSlot.streamingContent) failedSlot.streamingContent = ''
+                        failedSlot.streamingContent += delta
+                    }
+                )
+            } else {
+                recipe = await generateCustomRecipe(ingredients.value, customPrompt.value.trim())
+            }
+        } else {
+            if (inputType.value === 'dishName') {
+                recipe = await generateRecipeByDishNameStreaming(
+                    dishName.value.trim(),
+                    cuisine,
+                    (delta) => {
+                        if (!failedSlot.streamingContent) failedSlot.streamingContent = ''
+                        failedSlot.streamingContent += delta
+                    },
+                    customPrompt.value.trim() || undefined
+                )
+            } else {
+                recipe = await generateRecipe(ingredients.value, cuisine, customPrompt.value.trim() || undefined)
+            }
+        }
 
         // 成功生成，更新槽位
         failedSlot.recipe = recipe
         failedSlot.progress = 100
         failedSlot.loadingText = '重新创作完成！'
+        failedSlot.streamingContent = ''
 
         // 添加到菜谱列表
         recipes.value.push(recipe)

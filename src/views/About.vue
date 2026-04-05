@@ -109,118 +109,7 @@
                     </div>
                 </div>
             </div>
-            <!-- 关于作者 -->
-            <div class="relative mt-6">
-                <div class="bg-indigo-500 text-white px-4 py-2 rounded-t-lg border-2 border-[#0A0910] border-b-0 inline-block mb-0">
-                    <span class="font-bold text-lg">👨‍💻 关于作者</span>
-                </div>
-                <div class="bg-white border-2 border-[#0A0910] rounded-lg rounded-tl-none p-4 md:p-6">
-                    <div class="mt-4">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                            <div>
-                                <div class="flex items-center gap-4 mb-4">
-                                    <div class="w-16 h-16 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center border-2 border-[#0A0910]">
-                                        <span class="text-white text-2xl font-bold">L</span>
-                                    </div>
-                                    <div>
-                                        <h3 class="text-xl font-bold text-dark-800">liuziting</h3>
-                                        <p class="text-gray-600 text-sm">liuziting2014@163.com</p>
-                                    </div>
-                                </div>
-                                <p class="text-gray-700 mb-4 text-sm leading-relaxed">
-                                    🚀 Vibe Coding 通过 Kiro 编辑器，实现了从需求分析、架构设计到代码实现的全流程开发。 致力于探索AI与传统开发的完美结合，让编程变得更加高效和有趣。
-                                </p>
-                                <div class="space-y-3">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                                <path
-                                                    d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
-                                                />
-                                            </svg>
-                                        </div>
-                                        <div>
-                                            <span class="text-sm font-medium text-gray-700">开源地址</span>
-                                            <a href="https://github.com/liu-ziting/what-to-eat" target="_blank" class="block text-blue-600 hover:text-blue-700 underline text-sm">
-                                                github.com/liu-ziting/what-to-eat
-                                            </a>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                            <span class="text-white text-sm font-bold">K</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-sm font-medium text-gray-700">开发工具</span>
-                                            <p class="text-gray-600 text-sm">Kiro 编辑器 - AI驱动的全流程开发</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                            <span class="text-white text-sm font-bold">AI</span>
-                                        </div>
-                                        <div>
-                                            <span class="text-sm font-medium text-gray-700">更多 AI 开发项目</span>
-                                            <a
-                                                href="https://vibecoding.lz-t.top/"
-                                                target="_blank"
-                                                class="block text-blue-600 hover:text-blue-700 underline text-sm transition-colors"
-                                            >
-                                                vibecoding.lz-t.top
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div>
-                                <!-- 打赏区域 - 优化版 -->
-                                <div
-                                    class="support-section bg-gradient-to-br from-orange-100 to-red-100 border-4 border-orange-300 rounded-xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
-                                >
-                                    <div class="text-center mb-4">
-                                        <div class="inline-flex items-center gap-3 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-full mb-3">
-                                            <div class="text-2xl animate-bounce">☕</div>
-                                            <h4 class="font-bold text-lg">支持开发者</h4>
-                                        </div>
-                                        <p class="text-sm text-gray-700 font-medium mb-2">🤖 AI需要成本，您的支持让项目走得更远</p>
-                                        <p class="text-xs text-orange-600 bg-orange-50 px-3 py-1 rounded-full inline-block">每一份支持都是对开源精神的鼓励</p>
-                                    </div>
-
-                                    <div class="flex flex-col md:flex-row items-center gap-4">
-                                        <div class="flex-1 text-center md:text-left">
-                                            <div class="space-y-2 mb-4">
-                                                <div class="flex items-center justify-center md:justify-start gap-2">
-                                                    <span class="text-green-500">✓</span>
-                                                    <span class="text-sm">维持AI服务运行</span>
-                                                </div>
-                                                <div class="flex items-center justify-center md:justify-start gap-2">
-                                                    <span class="text-green-500">✓</span>
-                                                    <span class="text-sm">持续功能更新</span>
-                                                </div>
-                                                <div class="flex items-center justify-center md:justify-start gap-2">
-                                                    <span class="text-green-500">✓</span>
-                                                    <span class="text-sm">开源项目维护</span>
-                                                </div>
-                                            </div>
-                                            <p class="text-xs text-gray-500">扫码支持开发者 →</p>
-                                        </div>
-                                        <div class="flex-shrink-0">
-                                            <div class="relative">
-                                                <img
-                                                    src="/wx.jpg"
-                                                    alt="微信收款码"
-                                                    class="w-32 h-32 md:w-40 md:h-40 border-4 border-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300"
-                                                />
-                                                <div class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">微信</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- 关于作者已移除 -->
 
             <!-- 项目简介 -->
             <div class="relative">
@@ -435,9 +324,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- 底部 -->
-        <GlobalFooter />
     </div>
 </template>
 

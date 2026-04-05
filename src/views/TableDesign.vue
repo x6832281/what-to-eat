@@ -435,44 +435,41 @@
             </div>
         </div>
 
-        <!-- 底部 -->
-        <GlobalFooter />
-    </div>
-
-    <!-- 菜谱弹窗 -->
-    <Teleport to="body">
-        <div v-if="selectedRecipe" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 modal-overlay" @click="closeRecipeModal">
-            <div
-                class="bg-white rounded-2xl border-2 border-[#0A0910] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden modal-content transform transition-all duration-300"
-                @click.stop
-            >
-                <!-- 弹窗头部 -->
-                <div class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 flex justify-between items-center">
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">📖</span>
-                        <h3 class="text-xl font-bold">{{ selectedRecipe.name }}</h3>
+        <!-- 菜谱弹窗 -->
+        <Teleport to="body">
+            <div v-if="selectedRecipe" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4 modal-overlay" @click="closeRecipeModal">
+                <div
+                    class="bg-white rounded-2xl border-2 border-[#0A0910] shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden modal-content transform transition-all duration-300"
+                    @click.stop
+                >
+                    <!-- 弹窗头部 -->
+                    <div class="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-4 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <span class="text-2xl">📖</span>
+                            <h3 class="text-xl font-bold">{{ selectedRecipe.name }}</h3>
+                        </div>
+                        <button
+                            @click="closeRecipeModal"
+                            class="w-8 h-8 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+                        >
+                            <span class="text-white text-lg font-bold">✕</span>
+                        </button>
                     </div>
-                    <button
-                        @click="closeRecipeModal"
-                        class="w-8 h-8 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
-                    >
-                        <span class="text-white text-lg font-bold">✕</span>
-                    </button>
-                </div>
 
-                <!-- 弹窗内容 -->
-                <div class="max-h-[calc(90vh-80px)] overflow-y-auto scrollbar-hide">
-                    <div class="">
-                        <RecipeCard :recipe="selectedRecipe" />
+                    <!-- 弹窗内容 -->
+                    <div class="max-h-[calc(90vh-80px)] overflow-y-auto scrollbar-hide">
+                        <div class="">
+                            <RecipeCard :recipe="selectedRecipe" />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </Teleport>
+        </Teleport>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, Teleport, Transition, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, Transition, onMounted, onUnmounted } from 'vue'
 import type { Recipe } from '@/types'
 import RecipeCard from '@/components/RecipeCard.vue'
 import GlobalNavigation from '@/components/GlobalNavigation.vue'
