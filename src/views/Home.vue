@@ -6,37 +6,40 @@
         <div class="max-w-7xl mx-auto">
             <!-- 步骤1: 输入食材/菜名 -->
             <div class="mb-6">
-                <div class="flex gap-2 mb-[-2px] relative z-10">
+                <div class="flex gap-3 mb-[-3px] relative z-10">
                     <button
                         @click="inputType = 'ingredients'"
                         :class="[
-                            'px-4 py-2 rounded-t-lg border-2 border-[#0A0910] font-bold transition-all duration-200',
-                            inputType === 'ingredients' ? 'bg-pink-400 text-white border-b-0' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            'px-6 py-3 rounded-t-xl border-[3px] border-[#0A0910] font-black transition-all duration-200 flex items-center gap-2',
+                            inputType === 'ingredients' ? 'bg-pink-400 text-white border-b-white' : 'bg-white text-gray-500 hover:bg-gray-100'
                         ]"
                     >
-                        1. 输入食材
+                        <span class="text-xl">🥬</span>
+                        <span>输入食材</span>
                     </button>
                     <button
                         @click="inputType = 'dishName'"
                         :class="[
-                            'px-4 py-2 rounded-t-lg border-2 border-[#0A0910] font-bold transition-all duration-200',
-                            inputType === 'dishName' ? 'bg-purple-400 text-white border-b-0' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            'px-6 py-3 rounded-t-xl border-[3px] border-[#0A0910] font-black transition-all duration-200 flex items-center gap-2',
+                            inputType === 'dishName' ? 'bg-purple-400 text-white border-b-white' : 'bg-white text-gray-500 hover:bg-gray-100'
                         ]"
                     >
-                        2. 输入菜名
+                        <span class="text-xl">🥘</span>
+                        <span>输入菜名</span>
                     </button>
                     <button
                         @click="inputType = 'favorites'; favorites = FavoriteService.getFavorites()"
                         :class="[
-                            'px-4 py-2 rounded-t-lg border-2 border-[#0A0910] font-bold transition-all duration-200',
-                            inputType === 'favorites' ? 'bg-red-400 text-white border-b-0' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                            'px-6 py-3 rounded-t-xl border-[3px] border-[#0A0910] font-black transition-all duration-200 flex items-center gap-2',
+                            inputType === 'favorites' ? 'bg-red-400 text-white border-b-white' : 'bg-white text-gray-500 hover:bg-gray-100'
                         ]"
                     >
-                        3. 我的收藏
+                        <span class="text-xl">❤️</span>
+                        <span>我的收藏</span>
                     </button>
                 </div>
                 <div
-                    class="bg-white border-2 border-[#0A0910] rounded-lg rounded-tl-none p-4 md:p-6 md:pb-10"
+                    class="bg-white border-[3px] border-[#0A0910] rounded-2xl rounded-tl-none p-6 md:p-8 neo-shadow-lg"
                     :class="{ 
                         'border-t-pink-400': inputType === 'ingredients', 
                         'border-t-purple-400': inputType === 'dishName',
@@ -810,12 +813,11 @@
 
 <script setup lang="ts">
 // 性能优化：使用 shallowRef 减少深层响应式开销
-import { ref, shallowRef, onUnmounted } from 'vue'
+import { ref, shallowRef, onUnmounted, useTemplateRef, onMounted } from 'vue'
 import { cuisines } from '@/config/cuisines'
 import { ingredientCategories } from '@/config/ingredients'
 import RecipeCard from '@/components/RecipeCard.vue'
-import GlobalNavigation from '@/components/GlobalNavigation.vue'
-import GlobalFooter from '@/components/GlobalFooter.vue'
+// import GlobalNavigation from '@/components/GlobalNavigation.vue'
 import { generateCustomRecipe, generateMultipleRecipesStream, generateRecipe, generateRecipeByDishNameStreaming } from '@/services/aiService'
 import { FavoriteService } from '@/services/favoriteService'
 import type { Recipe, CuisineType, FavoriteRecipe } from '@/types'
@@ -825,8 +827,10 @@ const inputType = ref<'ingredients' | 'dishName' | 'favorites'>('ingredients')
 const dishName = ref('')
 const favorites = ref<FavoriteRecipe[]>([])
 
-// 页面加载时获取收藏
-import { onMounted } from 'vue'
+// 模板引用 (Vue 3.5+)
+const imageInput = useTemplateRef<HTMLInputElement>('imageInput')
+const resultsSection = useTemplateRef<HTMLDivElement>('resultsSection')
+
 onMounted(() => {
     favorites.value = FavoriteService.getFavorites()
 })
@@ -837,8 +841,8 @@ const selectedCuisines = ref<string[]>([])
 const customPrompt = ref('')
 const recipes = shallowRef<Recipe[]>([]) // 优化：菜谱数据不需要深度响应
 const isLoading = ref(false)
+let abortController: AbortController | null = null
 const loadingText = ref('大师正在挑选食材...')
-const resultsSection = ref<HTMLElement | null>(null)
 const errorMessage = ref('')
 const showIngredientPicker = ref(false)
 const showPresetPicker = ref(false)
@@ -934,7 +938,6 @@ const quickAddIngredient = (ingredient: string) => {
 }
 
 // 图片识别相关
-const imageInput = ref<HTMLInputElement | null>(null)
 const isRecognizing = ref(false)
 
 // 触发图片上传
@@ -1179,6 +1182,10 @@ const generateRecipes = async () => {
         return
     }
 
+    // 取消之前的请求
+    if (abortController) abortController.abort()
+    abortController = new AbortController()
+
     // 重置状态
     isLoading.value = true
     recipes.value = [] // 清空之前的菜谱
@@ -1252,10 +1259,11 @@ const generateRecipes = async () => {
                             cuisineSlots.value[0].streamingContent += delta
                         }
                     },
-                    customPrompt.value.trim() || undefined
+                    customPrompt.value.trim() || undefined,
+                    abortController.signal
                 )
             } else {
-                customRecipe = await generateCustomRecipe(ingredients.value, customPrompt.value.trim())
+                customRecipe = await generateCustomRecipe(ingredients.value, customPrompt.value.trim(), abortController.signal)
             }
 
             // 完成生成，更新槽位
@@ -1299,7 +1307,7 @@ const generateRecipes = async () => {
                 ingredients.value,
                 selectedCuisineObjects,
                 (recipe: Recipe, index: number, total: number) => {
-                    // 找到对应的菜系槽位并更新
+                    // ... 保持原有逻辑 ...
                     const targetSlot = cuisineSlots.value.find(slot => selectedCuisineObjects[index] && slot.id === selectedCuisineObjects[index].id)
 
                     if (targetSlot) {
@@ -1357,7 +1365,8 @@ const generateRecipes = async () => {
                     }
                 },
                 customPrompt.value.trim() || undefined,
-                inputType.value === 'dishName' ? dishName.value.trim() : undefined
+                inputType.value === 'dishName' ? dishName.value.trim() : undefined,
+                abortController.signal
             )
 
             // 清理进度定时器

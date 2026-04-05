@@ -1,250 +1,133 @@
 <template>
-    <div class="recipe-card bg-white">
+    <div class="bg-white border-[3px] border-[#0A0910] rounded-2xl overflow-hidden neo-shadow mb-6 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_#0A0910] transition-all duration-200">
         <!-- 菜谱头部 -->
-        <div class="bg-pink-400 text-white p-3 md:p-6 border-b-2 border-black">
-            <div class="flex items-start justify-between gap-2">
-                <div class="flex-1 min-w-0">
-                    <h3 class="text-base md:text-lg font-bold mb-2 line-clamp-2">{{ recipe.name }}</h3>
-                    <!-- 移动端：垂直布局 -->
-                    <div class="flex flex-col gap-1 md:hidden">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-white/20 px-2 py-1 rounded text-xs whitespace-nowrap"> 👨‍🍳 {{ recipe.cuisine }} </span>
-                            <span class="text-xs whitespace-nowrap">📊 {{ difficultyText }}</span>
-                        </div>
-                        <div class="text-xs">
-                            <span>⏱️ {{ formatTime(recipe.cookingTime) }}</span>
-                        </div>
-                    </div>
-                    <!-- 桌面端：水平布局 -->
-                    <div class="hidden md:flex items-center gap-3 text-sm">
-                        <span class="bg-white/20 px-2 py-1 rounded text-xs whitespace-nowrap"> 👨‍🍳 {{ recipe.cuisine }} </span>
-                        <span class="whitespace-nowrap">⏱️ {{ formatTime(recipe.cookingTime) }}</span>
-                        <span class="whitespace-nowrap">📊 {{ difficultyText }}</span>
+        <div class="bg-gradient-to-r from-yellow-300 to-yellow-400 p-6 border-b-[3px] border-[#0A0910] flex justify-between items-start">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-black text-white text-xs font-black px-2 py-1 rounded uppercase tracking-wider">{{ recipe.cuisine }}</span>
+                    <div class="flex items-center gap-1">
+                        <span v-for="i in 3" :key="i" :class="['text-sm', i <= (recipe.difficulty === 'easy' ? 1 : recipe.difficulty === 'medium' ? 2 : 3) ? 'text-black' : 'text-black/20']">🔥</span>
                     </div>
                 </div>
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <!-- 收藏按钮 -->
-                    <FavoriteButton v-if="showFavoriteButton" :recipe="recipe" @favorite-changed="onFavoriteChanged" />
+                <h3 class="text-3xl font-black text-black leading-tight">{{ recipe.name }}</h3>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <div class="bg-white border-2 border-black px-3 py-1 rounded-lg font-bold text-sm shadow-[2px_2px_0px_0px_#000]">
+                    ⏱️ {{ recipe.cookingTime }} min
                 </div>
+                <button
+                    v-if="showFavoriteButton"
+                    @click="toggleFavorite"
+                    class="w-12 h-12 rounded-full border-[3px] border-black flex items-center justify-center transition-all duration-200 active:scale-90"
+                    :class="isFavorited ? 'bg-red-500 text-white shadow-[2px_2px_0px_0px_#000]' : 'bg-white text-black hover:bg-red-50 shadow-[4px_4px_0px_0px_#000]'"
+                >
+                    <span class="text-2xl">{{ isFavorited ? '❤️' : '🤍' }}</span>
+                </button>
             </div>
         </div>
 
-        <div class="p-2 md:p-6">
-            <!-- 食材列表 -->
-            <div class="mb-4">
-                <h4 class="text-sm font-bold text-dark-800 mb-2 flex items-center gap-1">🥬 所需食材</h4>
-                <div class="flex flex-wrap gap-1">
-                    <span v-for="ingredient in recipe.ingredients" :key="ingredient" class="bg-yellow-400 text-dark-800 px-2 py-1 rounded text-xs font-medium border border-black">
-                        {{ ingredient }}
-                    </span>
-                </div>
-            </div>
-
-            <!-- 制作步骤预览 -->
-            <div class="mb-4">
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-sm font-bold text-dark-800 flex items-center gap-1">📝 制作步骤</h4>
-                    <button @click="toggleExpanded" class="bg-gray-100 hover:bg-gray-200 text-dark-800 text-xs px-2 py-1 rounded border border-black transition-colors">
-                        {{ isExpanded ? '收起' : '展开' }}
-                    </button>
-                </div>
-
-                <!-- 简化步骤预览 -->
-                <div v-if="!isExpanded" class="space-y-2">
-                    <div v-for="step in recipe.steps.slice(0, 3)" :key="step.step" class="flex gap-2 p-2 bg-gray-50 rounded border border-gray-200">
-                        <div class="flex-shrink-0 w-5 h-5 bg-dark-800 text-white rounded flex items-center justify-center font-bold text-xs">
-                            {{ step.step }}
-                        </div>
-                        <p class="text-dark-700 text-xs line-clamp-2">{{ step.description }}</p>
-                    </div>
-                    <div v-if="recipe.steps.length > 3" class="text-center py-1">
-                        <span class="text-gray-500 text-xs">还有 {{ recipe.steps.length - 3 }} 个步骤...</span>
+        <div class="p-6 md:p-8 space-y-8">
+            <!-- 食材区域 -->
+            <section>
+                <h4 class="text-xl font-black mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 bg-green-400 rounded-lg border-2 border-black flex items-center justify-center text-lg">🥬</span>
+                    所需食材
+                </h4>
+                <div class="flex flex-wrap gap-3">
+                    <div
+                        v-for="item in recipe.ingredients"
+                        :key="item"
+                        class="bg-yellow-100 border-2 border-black px-4 py-2 rounded-xl font-bold text-sm hover:bg-yellow-200 transition-colors cursor-default"
+                    >
+                        {{ item }}
                     </div>
                 </div>
+            </section>
 
-                <!-- 完整步骤 -->
-                <div v-else class="space-y-2">
-                    <div v-for="step in recipe.steps" :key="step.step" class="flex gap-3 p-3 bg-gray-50 rounded border border-gray-200">
-                        <div class="flex-shrink-0 w-6 h-6 bg-dark-800 text-white rounded flex items-center justify-center font-bold text-xs">
-                            {{ step.step }}
+            <!-- 制作步骤 -->
+            <section>
+                <h4 class="text-xl font-black mb-4 flex items-center gap-2">
+                    <span class="w-8 h-8 bg-blue-400 rounded-lg border-2 border-black flex items-center justify-center text-lg">📝</span>
+                    制作步骤
+                </h4>
+                <div class="space-y-4">
+                    <div
+                        v-for="(step, index) in recipe.steps"
+                        :key="index"
+                        class="flex gap-4 p-4 bg-gray-50 border-2 border-black rounded-xl hover:bg-white transition-colors group"
+                    >
+                        <div class="flex-shrink-0 w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-black italic group-hover:scale-110 transition-transform">
+                            {{ index + 1 }}
                         </div>
-                        <div class="flex-1">
-                            <p class="text-dark-800 mb-1 text-sm">{{ step.description }}</p>
-                            <div v-if="step.time || step.temperature" class="flex gap-2 text-xs text-gray-600">
-                                <span v-if="step.time" class="bg-white px-2 py-1 rounded border"> ⏱️ {{ formatTime(step.time) }} </span>
-                                <span v-if="step.temperature" class="bg-white px-2 py-1 rounded border"> 🌡️ {{ step.temperature }} </span>
+                        <div class="flex-1 pt-1">
+                            <p class="text-gray-800 leading-relaxed font-medium">{{ step.description }}</p>
+                            <div v-if="step.time || step.temperature" class="mt-2 flex gap-3">
+                                <span v-if="step.time" class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200">⏱️ {{ step.time }}分</span>
+                                <span v-if="step.temperature" class="text-xs font-bold bg-orange-100 text-orange-700 px-2 py-1 rounded border border-orange-200">🔥 {{ step.temperature }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- 烹饪技巧 -->
-            <div v-if="recipe.tips && recipe.tips.length > 0 && isExpanded" class="mb-4">
-                <h4 class="text-sm font-bold text-dark-800 mb-2 flex items-center gap-1">💡 烹饪技巧</h4>
-                <div class="bg-yellow-100 border-l-4 border-yellow-400 p-3 rounded-r">
-                    <ul class="space-y-1">
-                        <li v-for="tip in recipe.tips" :key="tip" class="flex items-start gap-2 text-dark-700">
-                            <span class="text-yellow-600 mt-1 text-xs">•</span>
-                            <span class="text-xs">{{ tip }}</span>
+            <!-- 大师贴士 -->
+            <section v-if="recipe.tips && recipe.tips.length > 0">
+                <div class="bg-indigo-50 border-[3px] border-indigo-500 rounded-2xl p-6 relative overflow-hidden">
+                    <div class="absolute -right-4 -bottom-4 opacity-10 grayscale">
+                        <span class="text-8xl">👨‍🍳</span>
+                    </div>
+                    <h4 class="text-indigo-900 font-black mb-3 flex items-center gap-2">
+                        <span>💡</span> 大师贴士
+                    </h4>
+                    <ul class="space-y-2 relative z-10">
+                        <li v-for="tip in recipe.tips" :key="tip" class="text-indigo-800 text-sm font-bold flex gap-2">
+                            <span class="text-indigo-400">●</span> {{ tip }}
                         </li>
                     </ul>
                 </div>
-            </div>
+            </section>
 
-            <!-- 营养分析 -->
-            <div v-if="isExpanded" class="mb-4">
-                <h4 class="text-sm font-bold text-dark-800 mb-3 flex items-center gap-1">📊 营养分析</h4>
-
-                <div v-if="isFetchingNutrition" class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 text-center">
-                    <div class="w-12 h-12 border-4 border-gray-300 border-t-green-500 rounded-full animate-spin mx-auto mb-3"></div>
-                    <h5 class="text-sm font-bold text-dark-800 mb-1">营养师正在分析中...</h5>
-                    <p class="text-gray-600 text-xs">{{ nutritionLoadingText }}</p>
-                </div>
-
-                <div v-else-if="nutritionError" class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs mb-3">
-                    {{ nutritionError }}
-                </div>
-
-                <NutritionAnalysis v-if="recipe.nutritionAnalysis" :nutritionAnalysis="recipe.nutritionAnalysis" />
-
-                <!-- 营养分析空状态 - 包含获取按钮 -->
-                <div v-else-if="!isFetchingNutrition" class="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors">
-                    <div class="text-gray-400 text-2xl mb-3">🥗</div>
-                    <p class="text-gray-500 text-xs mb-4">暂无营养分析数据</p>
+            <!-- 菜品效果图 -->
+            <section v-if="recipe.id">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-xl font-black flex items-center gap-2">
+                        <span class="w-8 h-8 bg-pink-400 rounded-lg border-2 border-black flex items-center justify-center text-lg">🖼️</span>
+                        菜品效果图
+                    </h4>
                     <button
-                        @click="fetchNutritionAnalysis"
-                        :disabled="isFetchingNutrition"
-                        class="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded text-xs font-medium border border-black transition-all duration-200 disabled:cursor-not-allowed"
-                    >
-                        <span class="flex items-center gap-1">
-                            <template v-if="isFetchingNutrition">
-                                <div class="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full"></div>
-                                获取中...
-                            </template>
-                            <template v-else> ✨ 获取营养分析 </template>
-                        </span>
-                    </button>
-                </div>
-
-                <!-- 重新获取按钮 - 当已有数据时显示 -->
-                <!-- <div v-if="recipe.nutritionAnalysis && !isFetchingNutrition" class="mt-3 text-center">
-                    <button
-                        @click="fetchNutritionAnalysis"
-                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium border border-black transition-all duration-200"
-                    >
-                        🔄 重新获取
-                    </button>
-                </div> -->
-            </div>
-
-            <!-- 饮品搭配 -->
-            <div v-if="isExpanded" class="mb-4">
-                <h4 class="text-sm font-bold text-dark-800 mb-3 flex items-center gap-1">🥤 饮品搭配</h4>
-
-                <div v-if="isFetchingWine" class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 text-center">
-                    <div class="w-12 h-12 border-4 border-gray-300 border-t-purple-500 rounded-full animate-spin mx-auto mb-3"></div>
-                    <h5 class="text-sm font-bold text-dark-800 mb-1">饮品师正在推荐中...</h5>
-                    <p class="text-gray-600 text-xs">{{ wineLoadingText }}</p>
-                </div>
-
-                <div v-else-if="wineError" class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs mb-3">
-                    {{ wineError }}
-                </div>
-
-                <WinePairing v-if="recipe.winePairing" :winePairing="recipe.winePairing" />
-
-                <!-- 饮品搭配空状态 - 包含获取按钮 -->
-                <div v-else-if="!isFetchingWine" class="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition-colors">
-                    <div class="text-gray-400 text-2xl mb-3">🥤</div>
-                    <p class="text-gray-500 text-xs mb-4">暂无饮品搭配推荐</p>
-                    <button
-                        @click="fetchWinePairing"
-                        :disabled="isFetchingWine"
-                        class="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded text-xs font-medium border border-black transition-all duration-200 disabled:cursor-not-allowed"
-                    >
-                        <span class="flex items-center gap-1">
-                            <template v-if="isFetchingWine">
-                                <div class="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full"></div>
-                                获取中...
-                            </template>
-                            <template v-else> ✨ 获取饮品搭配 </template>
-                        </span>
-                    </button>
-                </div>
-
-                <!-- 重新获取按钮 - 当已有数据时显示 -->
-                <!-- <div v-if="recipe.winePairing && !isFetchingWine" class="mt-3 text-center">
-                    <button
-                        @click="fetchWinePairing"
-                        class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-xs font-medium border border-black transition-all duration-200"
-                    >
-                        🔄 重新获取
-                    </button>
-                </div> -->
-            </div>
-
-            <!-- 效果图区域 -->
-            <div class="mt-4 pt-4 border-t border-gray-200">
-                <h4 class="text-sm font-bold text-dark-800 mb-3 flex items-center gap-1">🖼️ 菜品效果图</h4>
-
-                <!-- 加载状态 -->
-                <div v-if="isGeneratingImage" class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 text-center">
-                    <div class="w-12 h-12 border-4 border-gray-300 border-t-blue-500 rounded-full animate-spin mx-auto mb-3"></div>
-                    <h5 class="text-sm font-bold text-dark-800 mb-1">AI画师正在创作中...</h5>
-                    <p class="text-gray-600 text-xs">{{ imageLoadingText }}</p>
-                </div>
-
-                <!-- 错误提示 -->
-                <div v-else-if="imageError" class="bg-red-100 border border-red-400 text-red-700 px-3 py-2 rounded text-xs mb-3">
-                    {{ imageError }}
-                </div>
-
-                <!-- 生成的图片 -->
-                <div v-else-if="generatedImage" class="mb-3">
-                    <img
-                        :src="generatedImage.url"
-                        :alt="`${recipe.name}效果图`"
-                        class="w-full object-cover rounded-lg border-2 border-[#0A0910] cursor-pointer transition-all duration-300 hover:brightness-110 hover:scale-[1.02]"
-                        @error="handleImageError"
-                        @click="openImageModal"
-                    />
-                </div>
-
-                <!-- 效果图空状态 - 包含生成按钮 -->
-                <div v-else class="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-10 text-center hover:bg-gray-50 transition-colors">
-                    <div class="text-gray-400 text-2xl mb-3">📷</div>
-                    <p class="text-gray-500 text-xs mb-4">暂无菜品效果图</p>
-                    <button
+                        v-if="!generatedImage && !isGeneratingImage"
                         @click="generateImage"
-                        :disabled="isGeneratingImage"
-                        class="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded text-xs font-medium border border-black transition-all duration-200 disabled:cursor-not-allowed"
+                        class="px-4 py-2 bg-black text-white rounded-lg font-bold text-sm hover:bg-gray-800 active:scale-95 transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,0.3)]"
                     >
-                        <span class="flex items-center gap-1">
-                            <template v-if="isGeneratingImage">
-                                <div class="animate-spin w-3 h-3 border border-white border-t-transparent rounded-full"></div>
-                                生成中...
-                            </template>
-                            <template v-else> ✨ 生成效果图 </template>
-                        </span>
+                        ✨ AI 绘图
                     </button>
                 </div>
 
-                <!-- 重新生成按钮 - 当已有图片时显示 -->
-                <div v-if="generatedImage && !isGeneratingImage" class="mt-3 text-center">
-                    <button
-                        @click="generateImage"
-                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium border border-black transition-all duration-200"
-                    >
-                        🔄 重新生成
-                    </button>
+                <!-- 图片显示区域 -->
+                <div class="border-[3px] border-black rounded-2xl overflow-hidden bg-gray-100 min-h-[300px] flex items-center justify-center relative group">
+                    <div v-if="isGeneratingImage" class="flex flex-col items-center gap-4 p-8 text-center">
+                        <div class="w-16 h-16 border-4 border-black border-t-pink-500 rounded-full animate-spin"></div>
+                        <p class="font-black text-black animate-pulse">AI 画师正在挥毫泼墨...</p>
+                    </div>
+                    <div v-else-if="imageError" class="p-8 text-center">
+                        <span class="text-4xl mb-4 block">😅</span>
+                        <p class="text-red-500 font-bold mb-4">{{ imageError }}</p>
+                        <button @click="generateImage" class="text-blue-600 underline font-bold">重新尝试</button>
+                    </div>
+                    <div v-else-if="generatedImage" class="relative w-full">
+                        <img :src="generatedImage.url" :alt="recipe.name" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105" />
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <a :href="generatedImage.url" target="_blank" class="bg-white border-2 border-black px-4 py-2 rounded-lg font-black text-sm hover:bg-yellow-400">查看大图</a>
+                        </div>
+                    </div>
+                    <div v-else class="text-gray-400 font-bold flex flex-col items-center gap-2">
+                        <span class="text-6xl opacity-20">🥘</span>
+                        <p>点击按钮生成 AI 效果图</p>
+                    </div>
                 </div>
-            </div>
+            </section>
         </div>
     </div>
-
-    <!-- 图片弹窗 -->
-    <ImageModal v-if="showImageModal && generatedImage" :image="getModalImageData()!" @close="closeImageModal" />
 </template>
 
 <script setup lang="ts">

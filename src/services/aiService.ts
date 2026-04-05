@@ -39,14 +39,13 @@ export const generateRecipeByDishNameStreaming = async (
     dishName: string,
     cuisine: CuisineType,
     onDelta: (delta: string) => void,
-    customPrompt?: string
+    customPrompt?: string,
+    signal?: AbortSignal // 新增：支持请求取消
 ): Promise<Recipe> => {
     // 检查缓存
     const cacheKey = `dish:${dishName}:${cuisine.id}:${customPrompt || ''}`
     const cached = recipeCache.get(cacheKey)
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log('从缓存获取菜谱:', dishName)
-        // 模拟流式效果（可选，这里直接返回以提高速度）
         return cached.recipe
     }
 
@@ -66,6 +65,7 @@ export const generateRecipeByDishNameStreaming = async (
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${apiConfig.apiKey}`
             },
+            signal, // 传入 signal
             body: JSON.stringify({
                 model: apiConfig.model,
                 messages: [
@@ -165,7 +165,8 @@ export const generateRecipeStreaming = async (
     ingredients: string[],
     cuisine: CuisineType,
     onDelta: (delta: string) => void,
-    customPrompt?: string
+    customPrompt?: string,
+    signal?: AbortSignal
 ): Promise<Recipe> => {
     // 检查缓存
     const cacheKey = `ingredients:${ingredients.sort().join(',')}:${cuisine.id}:${customPrompt || ''}`
@@ -190,6 +191,7 @@ export const generateRecipeStreaming = async (
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${apiConfig.apiKey}`
             },
+            signal,
             body: JSON.stringify({
                 model: apiConfig.model,
                 messages: [
@@ -646,93 +648,15 @@ export const generateDishRecipe = async (dishName: string, dishDescription: stri
 }
 
 // 使用自定义提示词生成菜谱
-export const generateCustomRecipe = async (ingredients: string[], customPrompt: string): Promise<Recipe> => {
-    try {
-        const prompt = `你是一位经验丰富的专业厨师，请根据用户提供的食材和特殊要求，生成详细实用的菜谱。
-
-用户提供的食材：${ingredients.join('、')}
-
-用户的特殊要求：${customPrompt}
-
-请生成一份详细的菜谱，要求：
-1. 充分利用用户提供的食材，合理搭配
-2. 食材清单包含具体用量（如：鸡蛋2个、盐1茶匙、油2勺）
-3. 制作步骤要详细具体：
-   - 食材预处理（清洗、切配、腌制等具体方法）
-   - 烹饪过程（炒制手法、调味时机、火候变化）
-   - 关键判断点（颜色变化、香味散发、质地状态）
-   - 每步骤的准确时间控制
-4. 烹饪技巧要实用，包含成功秘诀和常见错误避免
-5. 满足用户的特殊要求，如口味偏好、营养需求等
-
-请按照以下JSON格式返回菜谱：
-{
-  "name": "菜品名称",
-  "ingredients": ["主料1 具体用量", "调料1 具体用量"],
-  "steps": [
-    {
-      "step": 1,
-      "description": "详细的操作步骤，包含具体方法、判断标准和注意要点",
-      "time": 5,
-      "temperature": "具体火候描述"
+export const generateCustomRecipe = async (ingredients: string[], prompt: string, signal?: AbortSignal): Promise<Recipe> => {
+    const customCuisine: CuisineType = {
+        id: 'custom',
+        name: '自定义',
+        avatar: '👨‍🍳',
+        prompt: prompt
     }
-  ],
-  "cookingTime": 30,
-  "difficulty": "easy/medium/hard",
-  "tips": ["实用技巧：具体操作要点", "注意事项：避免失败的关键"]
-}`
 
-        const aiClient = createAiClient()
-        const apiConfig = getTextGenerationConfig()
-
-        const response = await aiClient.post('/chat/completions', {
-            model: apiConfig.model,
-            messages: [
-                {
-                    role: 'system',
-                    content: '你是一位经验丰富的专业厨师，擅长根据用户需求定制菜谱。你的菜谱详细实用，让新手也能成功制作美味佳肴。请严格按照JSON格式返回，不要包含任何其他文字。'
-                },
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            temperature: apiConfig.temperature,
-            max_tokens: 2000,
-            stream: false
-        })
-
-        const aiResponse = response.data.choices[0].message.content
-        let cleanResponse = aiResponse.trim()
-        if (cleanResponse.startsWith('```json')) {
-            cleanResponse = cleanResponse.replace(/```json\s*/, '').replace(/```\s*$/, '')
-        } else if (cleanResponse.startsWith('```')) {
-            cleanResponse = cleanResponse.replace(/```\s*/, '').replace(/```\s*$/, '')
-        }
-
-        const recipeData = JSON.parse(cleanResponse)
-
-        const recipe: Recipe = {
-            id: `recipe-custom-${Date.now()}`,
-            name: recipeData.name || '自定义菜品',
-            cuisine: '自定义',
-            ingredients: recipeData.ingredients || ingredients,
-            steps: recipeData.steps || [
-                { step: 1, description: '准备所有食材', time: 5 },
-                { step: 2, description: '按照要求烹饪', time: 20 }
-            ],
-            cookingTime: recipeData.cookingTime || 25,
-            difficulty: recipeData.difficulty || 'medium',
-            tips: recipeData.tips || ['根据个人口味调整', '注意火候控制'],
-            nutritionAnalysis: undefined,
-            winePairing: undefined
-        }
-
-        return recipe
-    } catch (error) {
-        console.error('生成自定义菜谱失败:', error)
-        throw new Error('大厨表示这个自定义要求太有挑战性了，请稍后重试')
-    }
+    return generateRecipeStreaming(ingredients, customCuisine, () => {}, undefined, signal)
 }
 
 // 流式生成多个菜系的菜谱
@@ -743,12 +667,16 @@ export const generateMultipleRecipesStream = async (
     onRecipeError?: (error: Error, index: number, cuisine: CuisineType, total: number) => void,
     onDelta?: (delta: string, index: number) => void,
     customPrompt?: string,
-    dishName?: string // 新增：菜名参数
+    dishName?: string,
+    signal?: AbortSignal
 ): Promise<void> => {
     const total = cuisines.length
     let completedCount = 0
 
     for (let index = 0; index < cuisines.length; index++) {
+        // 如果信号已取消，停止后续生成
+        if (signal?.aborted) return
+
         const cuisine = cuisines[index]
         try {
             let recipe: Recipe
@@ -760,7 +688,8 @@ export const generateMultipleRecipesStream = async (
                     (delta) => {
                         if (onDelta) onDelta(delta, index)
                     },
-                    customPrompt
+                    customPrompt,
+                    signal
                 )
             } else {
                 // 否则使用根据食材生成的函数
@@ -770,12 +699,15 @@ export const generateMultipleRecipesStream = async (
                     (delta) => {
                         if (onDelta) onDelta(delta, index)
                     },
-                    customPrompt
+                    customPrompt,
+                    signal
                 )
             }
             completedCount++
             onRecipeGenerated(recipe, index, total)
         } catch (error) {
+            // 如果是取消错误，直接退出
+            if (error instanceof Error && error.name === 'AbortError') return
             console.error(`生成${cuisine.name}菜谱失败:`, error)
             if (onRecipeError) {
                 const friendlyError = new Error(`${cuisine.name}不会这道菜，哈哈`)

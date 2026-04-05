@@ -1,21 +1,54 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
 
-@font-face {
-    font-family: 'PingFangLiuAngLeTianTi';
-    src: url('/fonts/PingFangLiuAngLeTianTi-2.ttf') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-    font-display: swap;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
     font-family: 'Noto Sans SC', sans-serif;
-    background: #fbbf24;
+    background: #fde047; /* 更亮一点的黄色 */
     min-height: 100vh;
+    color: #0A0910;
+}
+
+/* 新粗野主义核心阴影优化 */
+.neo-shadow {
+    box-shadow: 4px 4px 0px 0px #0A0910;
+}
+
+.neo-shadow-hover:hover {
+    box-shadow: 2px 2px 0px 0px #0A0910;
+    transform: translate(2px, 2px);
+}
+
+.neo-shadow-lg {
+    box-shadow: 8px 8px 0px 0px #0A0910;
+}
+
+.neo-border {
+    border: 3px solid #0A0910;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #0A0910;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
 }
 
 /* 自定义动画 */

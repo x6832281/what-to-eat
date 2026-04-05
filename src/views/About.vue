@@ -120,9 +120,9 @@
                     <div class="mt-4">
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center mb-8">
                             <div>
-                                <h2 class="text-xl font-bold text-dark-800 mb-4">一饭封神 - AI厨艺大师指导平台</h2>
-                                <p class="text-gray-700 text-sm mb-4 leading-relaxed">
-                                    一饭封神是一个创新的AI厨艺指导平台，汇聚了中华八大菜系和国际料理的精华。 通过先进的人工智能技术，我们为每一位用户提供个性化的烹饪指导，
+                                <h2 class="text-xl font-bold text-dark-800 mb-4">KitchenAI - AI厨艺大师指导平台</h2>
+                                <p class="text-gray-700 mb-4 leading-relaxed">
+                                    KitchenAI是一个创新的AI厨艺指导平台。 通过先进的人工智能技术，我们为每一位用户提供个性化的烹饪指导，
                                     让每一餐都能达到"封神"级别的美味体验。
                                 </p>
                                 <div class="space-y-2">

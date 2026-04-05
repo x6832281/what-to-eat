@@ -1,8 +1,8 @@
 {
-    "name": "yifan-fengshen",
+    "name": "kitchen-ai",
     "version": "1.0.0",
     "type": "module",
-    "description": "一饭封神 - AI厨艺大师指导平台",
+    "description": "KitchenAI - AI厨艺大师指导平台",
     "scripts": {
         "dev": "vite",
         "build": "vue-tsc --noEmit && vite build",
